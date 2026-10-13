@@ -5,17 +5,19 @@ from yoyo.features import FeaturePipeline
 
 from features.returns import ReturnFeature
 from features.volatility import VolatilityFeature
+from features.drop_columns import DropColumnsFeature
 
 if __name__ == "__main__":
     # 1. Instantiate the CCXT cached loader for Binance ETH/USDT futures
-    loader = CcxtCachedLoader(symbol='ETH/USDT', exchange_id='binance', cache_dir='./data_cache')
+    loader = CcxtCachedLoader(symbol='ETH/USDT', exchange_id='binance', cache_dir='./data/cache')
 
     # 2. Build your feature pipeline
     pipeline = (
         FeaturePipeline()
-        .register(ReturnFeature(name='return_1h'))
+        .register(ReturnFeature(name='return_1h', close_column='close'))
         .register(VolatilityFeature(name='vol_24h', window=24, return_column='return_1h'))
         .register(VolatilityFeature(name='vol_168h', window=168, return_column='return_1h'))
+        .register(DropColumnsFeature(['open', 'high', 'low', 'close', 'volume']))
     )
 
     # 3. Run it! (First time fetches from Binance and saves to ./data_cache. Next time it loads instantly from disk.)
@@ -25,5 +27,5 @@ if __name__ == "__main__":
         freq='1h',
         loader=loader
     )
-
+    processed_data.to_csv('./data/processed_data.csv', index=True)
     print(processed_data)
