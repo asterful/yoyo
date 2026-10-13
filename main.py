@@ -26,4 +26,4 @@ if __name__ == "__main__":
         loader=loader
     )
 
-    print(processed_data.tail())
+    print(processed_data)
