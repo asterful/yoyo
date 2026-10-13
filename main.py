@@ -9,6 +9,8 @@ from features.drop_columns import DropColumnsFeature
 from features.ffd import FFDFeature
 from features.log import LogFeature
 
+from labels.triple_barrier import TripleBarrierLabel
+
 if __name__ == "__main__":
     # 1. Instantiate the CCXT cached loader for Binance ETH/USDT futures
     loader = CcxtCachedLoader(symbol='ETH/USDT', exchange_id='binance', cache_dir='./data/cache')
@@ -21,6 +23,13 @@ if __name__ == "__main__":
         .register(FFDFeature(name='ffd_log_1h', price_column='log_close', d=0.4, thresh=1e-4))
         .register(VolatilityFeature(name='vol_24h', window=24, return_column='return_1h'))
         .register(VolatilityFeature(name='vol_168h', window=168, return_column='return_1h'))
+        .register(TripleBarrierLabel(
+            name='target_tb_24h', 
+            horizon=24,
+            pt_mult=2.0, 
+            sl_mult=1.0, 
+            volatility_col='vol_24h'
+        ))
         .register(DropColumnsFeature(['open', 'high', 'low', 'close', 'volume']))
     )
 

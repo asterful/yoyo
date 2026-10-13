@@ -6,9 +6,12 @@ class BaseFeature(ABC):
         self.name = name
 
     @property
-    @abstractmethod
     def warmup_bars(self) -> int:
-        pass
+        return 0
+
+    @property
+    def lookahead_bars(self) -> int:
+        return 0
 
     @abstractmethod
     def compute(self, df: pd.DataFrame) -> pd.DataFrame:
