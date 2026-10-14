@@ -3,6 +3,9 @@ import numpy as np
 
 from yoyo.loaders import CcxtCachedLoader
 from yoyo.features import FeaturePipeline
+from yoyo.core import BacktestSplitter
+from yoyo.core import WalkForwardCrossValidator
+from yoyo.models import XGBoostQuantModel
 
 from features.returns import ReturnFeature
 from features.volatility import VolatilityFeature
@@ -13,10 +16,6 @@ from features.log import LogFeature
 from labels.triple_barrier import TripleBarrierLabel
 from labels.shift_triple_barrier import ShiftTribleBarrierLabel
 
-from yoyo.core import BacktestSplitter
-from yoyo.core import WalkForwardCrossValidator
-
-from xgboost import XGBClassifier
 from sklearn.metrics import accuracy_score, precision_score
 
 if __name__ == "__main__":
@@ -53,7 +52,8 @@ if __name__ == "__main__":
 
     train_data, test_data = splitter.get_last_split()
 
-    validator = WalkForwardCrossValidator(model=XGBClassifier(), data=train_data, n_splits=5)
+    model = XGBoostQuantModel(n_estimators=100, max_depth=5, learning_rate=0.1)
+    validator = WalkForwardCrossValidator(model=model, data=train_data, n_splits=5)
     results = validator.run(target_col='target_tb_24h')
 
     fold_accuracies = []
