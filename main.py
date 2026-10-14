@@ -1,11 +1,14 @@
 import pandas as pd
 import numpy as np
+import optuna
 
 from yoyo.loaders import CcxtCachedLoader
 from yoyo.features import FeaturePipeline
 from yoyo.core import BacktestSplitter
 from yoyo.core import WalkForwardCrossValidator
+from yoyo.core import OptunaOptimizer
 from yoyo.models import XGBoostQuantModel
+
 
 from features.returns import ReturnFeature
 from features.volatility import VolatilityFeature
@@ -52,26 +55,13 @@ if __name__ == "__main__":
 
     train_data, test_data = splitter.get_last_split()
 
-    model = XGBoostQuantModel(n_estimators=100, max_depth=5, learning_rate=0.1)
-    validator = WalkForwardCrossValidator(model=model, data=train_data, n_splits=5)
-    results = validator.run(target_col='target_tb_24h')
+    tuner = OptunaOptimizer(
+        model_class=XGBoostQuantModel,
+        validator_class=WalkForwardCrossValidator,
+        train_data=train_data,
+        target_col='target_tb_24h',
+        n_splits=5
+    )
 
-    fold_accuracies = []
-    fold_precisions = []
-
-    for res in results:
-        y_true = res["y_true"]
-        y_pred = res["y_pred"]
-        
-        acc = accuracy_score(y_true, y_pred)
-        prec = precision_score(y_true, y_pred, average="macro", zero_division=0)
-        
-        fold_accuracies.append(acc)
-        fold_precisions.append(prec)
-        
-        print(f"Fold {res['fold']} | Accuracy: {acc * 100:.2f}% | Precision: {prec * 100:.2f}%")
-
-    # Print the final averages across all folds
-    print("-" * 40)
-    print(f"Average Accuracy:  {np.mean(fold_accuracies) * 100:.2f}%")
-    print(f"Average Precision: {np.mean(fold_precisions) * 100:.2f}%")
+    best_params = tuner.optimize(n_trials=30)
+    tuner.evaluate_cv_folds(best_params)

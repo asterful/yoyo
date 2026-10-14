@@ -1,2 +1,3 @@
 from .backtest_splitter import BacktestSplitter
 from .walk_forward_cross_validator import WalkForwardCrossValidator
+from .hyperparameters import OptunaOptimizer

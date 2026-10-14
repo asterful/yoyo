@@ -5,9 +5,6 @@ import joblib
 import xgboost as xgb
 
 class BaseModel(ABC):
-    def __init__(self, **kwargs):
-        self.params = kwargs
-        self.model = None
 
     @abstractmethod
     def fit(self, X: pd.DataFrame, y: pd.Series) -> None:

@@ -6,9 +6,8 @@ import xgboost as xgb
 from .base import BaseModel
 
 class XGBoostQuantModel(BaseModel):
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        # Initialize the XGBoost classifier with any passed hyperparameters
+    def __init__(self, params: dict = None):
+        self.params = params or {}
         self.model = xgb.XGBClassifier(**self.params)
 
 
