@@ -32,6 +32,7 @@ class CcxtCachedLoader(BaseLoader):
             since=since, 
             params={
                 'paginate': True,
+                'paginationCalls': 50,
                 'until': until
             }
         )
