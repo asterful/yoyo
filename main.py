@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 
 from yoyo.loaders import CcxtCachedLoader
 from yoyo.features import FeaturePipeline
@@ -10,8 +11,13 @@ from features.ffd import FFDFeature
 from features.log import LogFeature
 
 from labels.triple_barrier import TripleBarrierLabel
+from labels.shift_triple_barrier import ShiftTribleBarrierLabel
 
 from yoyo.core import BacktestSplitter
+from yoyo.core import WalkForwardCrossValidator
+
+from xgboost import XGBClassifier
+from sklearn.metrics import accuracy_score, precision_score
 
 if __name__ == "__main__":
     # 1. Instantiate the CCXT cached loader for Binance ETH/USDT futures
@@ -32,6 +38,7 @@ if __name__ == "__main__":
             sl_mult=1.0, 
             volatility_col='vol_24h'
         ))
+        .register(ShiftTribleBarrierLabel(target_col='target_tb_24h'))
         .register(DropColumnsFeature(['open', 'high', 'low', 'close', 'volume']))
     )
 
@@ -41,31 +48,30 @@ if __name__ == "__main__":
         ends_at=pd.Timestamp("2026-01-01 00:00:00"),
         in_sample_window=pd.Timedelta(days=365),
         out_of_sample_window=pd.Timedelta(days=90),
-        n_splits=3
+        n_splits=1
     )
 
-    # to iterate all the splits and print the train and test data shapes
-    for i, (train_data, test_data) in enumerate(splitter.split()):
-        print(f"Split {i+1}:")
-        print(f"Train data shape: {train_data}")
-        print(f"Test data shape: {test_data}")
-        print()
-
-    # to just get the last split and print the train and test data shapes
     train_data, test_data = splitter.get_last_split()
-    print(f"Last Split:")
-    print(f"Train data shape: {train_data.shape}")
-    print(f"Test data shape: {test_data.shape}")
 
-    """
-    # 3. Run it! (First time fetches from Binance and saves to ./data_cache. Next time it loads instantly from disk.)
-    processed_data = pipeline.generate(
-        start_date=pd.Timestamp("2026-01-01 00:00:00"),
-        end_date=pd.Timestamp("2026-03-31 23:00:00"),
-        loader=loader
-    )
-    processed_data.to_csv('./data/processed_data.csv', index=True)
-    print((processed_data['vol_24h'] < 0).any())
-    print(processed_data[['return_1h', 'vol_24h']].describe())
-    print(processed_data)
-    """
+    validator = WalkForwardCrossValidator(model=XGBClassifier(), data=train_data, n_splits=5)
+    results = validator.run(target_col='target_tb_24h')
+
+    fold_accuracies = []
+    fold_precisions = []
+
+    for res in results:
+        y_true = res["y_true"]
+        y_pred = res["y_pred"]
+        
+        acc = accuracy_score(y_true, y_pred)
+        prec = precision_score(y_true, y_pred, average="macro", zero_division=0)
+        
+        fold_accuracies.append(acc)
+        fold_precisions.append(prec)
+        
+        print(f"Fold {res['fold']} | Accuracy: {acc * 100:.2f}% | Precision: {prec * 100:.2f}%")
+
+    # Print the final averages across all folds
+    print("-" * 40)
+    print(f"Average Accuracy:  {np.mean(fold_accuracies) * 100:.2f}%")
+    print(f"Average Precision: {np.mean(fold_precisions) * 100:.2f}%")
