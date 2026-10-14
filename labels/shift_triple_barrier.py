@@ -7,12 +7,6 @@ class ShiftTribleBarrierLabel(BaseFeature):
         self.target_col = target_col
 
 
-    @property
-    def lookahead_bars(self) -> int:
-        """No lookahead needed since it transforms an already computed column."""
-        return 0
-
-
     def compute(self, df: pd.DataFrame) -> pd.DataFrame:
         if self.target_col not in df.columns:
             raise KeyError(f"EncodedLabelFeature missing input column: '{self.target_col}'")

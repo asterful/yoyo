@@ -3,11 +3,11 @@ import numpy as np
 from yoyo.features import BaseFeature
 
 class TripleBarrierLabel(BaseFeature):
-    def __init__(self, name: str, horizon: int, pt_mult: float, sl_mult: float, volatility_col: str):
+    def __init__(self, name: str, horizon: int, scaler: float, ratio: float, volatility_col: str):
         super().__init__(name)
         self.horizon = horizon
-        self.pt_mult = pt_mult
-        self.sl_mult = sl_mult
+        self.scaler = scaler
+        self.ratio = ratio
         self.volatility_col = volatility_col
 
 
@@ -31,6 +31,12 @@ class TripleBarrierLabel(BaseFeature):
         n = len(df)
         labels = np.full(n, np.nan)
 
+        # Derive pt_mult and sl_mult from scaler and ratio
+        # scaler: baseline volatility multiplier for stop-loss
+        # ratio: profit-taking distance relative to stop-loss (e.g. ratio=2.0 means PT is 2x wider than SL)
+        sl_mult = self.scaler
+        pt_mult = self.scaler * self.ratio
+
         # Iterate through the timeline up to the point where the lookahead window fits
         for i in range(n - self.horizon):
             entry_price = close[i]
@@ -40,8 +46,8 @@ class TripleBarrierLabel(BaseFeature):
                 continue
 
             # Calculate absolute price levels for the profit-taking and stop-loss barriers
-            upper_barrier = entry_price * (1.0 + self.pt_mult * current_vol)
-            lower_barrier = entry_price * (1.0 - self.sl_mult * current_vol)
+            upper_barrier = entry_price * (1.0 + pt_mult * current_vol)
+            lower_barrier = entry_price * (1.0 - sl_mult * current_vol)
 
             # Scan the future price path window: [i + 1 : i + self.horizon + 1]
             future_highs = high[i + 1 : i + self.horizon + 1]

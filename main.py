@@ -17,6 +17,7 @@ from features.ffd import FFDFeature
 from features.log import LogFeature
 
 from labels.triple_barrier import TripleBarrierLabel
+from labels.print_label_distribution import PrintLabelDistribution
 from labels.shift_triple_barrier import ShiftTribleBarrierLabel
 
 from sklearn.metrics import accuracy_score, precision_score
@@ -36,10 +37,11 @@ if __name__ == "__main__":
         .register(TripleBarrierLabel(
             name='target_tb_24h', 
             horizon=24,
-            pt_mult=2.0, 
-            sl_mult=1.0, 
+            scaler=3, 
+            ratio=1.5, 
             volatility_col='vol_24h'
         ))
+        .register(PrintLabelDistribution(label_col='target_tb_24h'))
         .register(ShiftTribleBarrierLabel(target_col='target_tb_24h'))
         .register(DropColumnsFeature(['open', 'high', 'low', 'close', 'volume']))
     )
