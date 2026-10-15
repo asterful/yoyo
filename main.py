@@ -57,14 +57,15 @@ if __name__ == "__main__":
         n_splits=1
     )
 
-    train_data, test_data = splitter.get_last_split()
+    train_data, embargo_data, test_data = splitter.get_last_split()
 
     print(f"Train data shape: {train_data.shape}")
+    print(f"Embargo data shape: {embargo_data.shape}")
     print(f"Test data shape: {test_data.shape}")
     train_data.to_csv("data/dollar_bars_train_data.csv", index=True)
+    embargo_data.to_csv("data/dollar_bars_embargo.csv", index=True)
     test_data.to_csv("data/dollar_bars_test_data.csv", index=True)
 
-    """
     tuner = OptunaOptimizer(
         model_class=XGBoostQuantModel,
         validator_class=WalkForwardCrossValidator,
@@ -75,4 +76,3 @@ if __name__ == "__main__":
 
     best_params = tuner.optimize(n_trials=30)
     tuner.evaluate_cv_folds(best_params)
-    """

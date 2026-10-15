@@ -4,15 +4,16 @@ import pandas as pd
 from sklearn.metrics import classification_report, precision_recall_fscore_support
 
 class OptunaOptimizer:
-    def __init__(self, model_class, validator_class, train_data: pd.DataFrame, target_col: str = "target_tb_24h", n_splits: int = 5):
+    def __init__(self, model_class, validator_class, train_data: pd.DataFrame, target_col: str = "target_tb_24h", n_splits: int = 5, gap: int = 0):
         self.model_class = model_class
         self.validator_class = validator_class
         self.train_data = train_data
         self.target_col = target_col
         self.n_splits = n_splits
+        self.gap = gap
 
 
-    def optimize(self, n_trials: int = 30) -> dict:
+    def optimize(self, n_trials: int = 30, gap: int = 0) -> dict:
         """
         Runs Optuna study maximizing Class 2 F1-score (balancing precision & recall) 
         across walk-forward training folds.
@@ -28,7 +29,7 @@ class OptunaOptimizer:
             }
             
             model = self.model_class(params=params)
-            validator = self.validator_class(model=model, data=self.train_data, n_splits=self.n_splits)
+            validator = self.validator_class(model=model, data=self.train_data, n_splits=self.n_splits, gap=self.gap)
             results = validator.run(target_col=self.target_col)
             
             fold_f1_scores = []
@@ -62,7 +63,7 @@ class OptunaOptimizer:
         and prints a detailed performance report for the training period.
         """
         model = self.model_class(params=best_params)
-        validator = self.validator_class(model=model, data=self.train_data, n_splits=self.n_splits)
+        validator = self.validator_class(model=model, data=self.train_data, n_splits=self.n_splits, gap=self.gap)
         results = validator.run(target_col=self.target_col)
         
         # Concatenate all fold true and predicted labels together

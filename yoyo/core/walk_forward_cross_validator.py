@@ -3,10 +3,10 @@ import xgboost as xgb
 from sklearn.model_selection import TimeSeriesSplit
 
 class WalkForwardCrossValidator:
-    def __init__(self, model: BaseModel, data: pd.DataFrame, n_splits: int = 5):
+    def __init__(self, model: BaseModel, data: pd.DataFrame, n_splits: int = 5, gap: int = 0):
         self.model = model
         self.data = data
-        self.splitter = TimeSeriesSplit(n_splits=n_splits)
+        self.splitter = TimeSeriesSplit(n_splits=n_splits, gap=gap)
 
 
     def _split_features_target(self, df: pd.DataFrame, target_col: str):
