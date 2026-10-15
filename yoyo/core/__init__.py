@@ -1,3 +1,4 @@
 from .backtest_splitter import BacktestSplitter
+from .bar_backtest_splitter import BarBacktestSplitter
 from .walk_forward_cross_validator import WalkForwardCrossValidator
 from .hyperparameters import OptunaOptimizer

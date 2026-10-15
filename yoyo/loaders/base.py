@@ -10,3 +10,9 @@ class BaseLoader(ABC):
         and sorted chronologically.
         """
         pass
+
+
+class BackwardsLoader(ABC):
+    @abstractmethod
+    def load_backward(self,  ends_at: pd.Timestamp, target_bars: int) -> pd.DataFrame:
+        pass
