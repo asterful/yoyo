@@ -9,7 +9,6 @@ from yoyo.core import WalkForwardCrossValidator
 from yoyo.core import OptunaOptimizer
 from yoyo.models import XGBoostQuantModel
 
-
 from features.returns import ReturnFeature
 from features.volatility import VolatilityFeature
 from features.drop_columns import DropColumnsFeature
@@ -21,6 +20,8 @@ from labels.print_label_distribution import PrintLabelDistribution
 from labels.shift_triple_barrier import ShiftTribleBarrierLabel
 
 from sklearn.metrics import accuracy_score, precision_score
+
+from yoyo.loaders.backwards_dollars_loader import BackwardsDollarBarsLoader
 
 if __name__ == "__main__":
     # 1. Instantiate the CCXT cached loader for Binance ETH/USDT futures
@@ -57,6 +58,7 @@ if __name__ == "__main__":
 
     train_data, test_data = splitter.get_last_split()
 
+    """
     tuner = OptunaOptimizer(
         model_class=XGBoostQuantModel,
         validator_class=WalkForwardCrossValidator,
@@ -67,3 +69,20 @@ if __name__ == "__main__":
 
     best_params = tuner.optimize(n_trials=30)
     tuner.evaluate_cv_folds(best_params)
+    """
+
+    start = pd.Timestamp('2026-01-01 00:00:00')
+    end = pd.Timestamp('2026-09-30 23:59:59')
+
+    # Initialize loader with a $5M dollar bar threshold
+    dollar_loader = BackwardsDollarBarsLoader(
+        symbol='ETH/USDT', 
+        exchange_id='binance', 
+        dollar_threshold=5_000_000,
+        cache_dir='./data/cache'
+    )
+
+    # Load data (fetches/caches raw trades on first run, builds bars instantly on subsequent runs)
+    dollar_bars_df = dollar_loader.load_backward(end, 10_000)  # Fetches 10,000 dollar bars backward from the end date
+    dollar_bars_df.to_csv('./data/dollar_bars_eth_usdt.csv', index=True)
+    print(dollar_bars_df.head())
