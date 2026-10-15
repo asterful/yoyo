@@ -4,7 +4,7 @@ from yoyo.loaders.base import BaseLoader
 from yoyo.loaders.base import BackwardsLoader
 
 class FeaturePipeline:
-    def __init__(self, freq: str):
+    def __init__(self, freq: str = '1h'):
         self.modules = []
         self.freq = freq
 

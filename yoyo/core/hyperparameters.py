@@ -4,7 +4,7 @@ import pandas as pd
 from sklearn.metrics import classification_report, precision_recall_fscore_support
 
 class OptunaOptimizer:
-    def __init__(self, model_class, validator_class, train_data: pd.DataFrame, target_col: str = "target_tb_24h", n_splits: int = 5, gap: int = 0):
+    def __init__(self, model_class, validator_class, train_data: pd.DataFrame, target_col: str = "target_tb_24b", n_splits: int = 5, gap: int = 0):
         self.model_class = model_class
         self.validator_class = validator_class
         self.train_data = train_data
