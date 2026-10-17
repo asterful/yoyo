@@ -1,5 +1,3 @@
-from .bar_duration import BarDurationFeature
-from .bar_speed import BarSpeedFeature
 from .cusum_deviation import CUSUMDeviationFeature
 from .drop_columns import DropColumnsFeature
 from .ewma_range_position import EWMARangePositionFeature
