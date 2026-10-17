@@ -11,7 +11,7 @@ except ImportError as error:
     ) from error
 
 
-DATA_DIR = Path(__file__).resolve().parent / "data" / "processed_aggTrades"
+DATA_DIR = Path(__file__).resolve().parent.parent / "data" / "processed_aggTrades"
 MIB = 1024 * 1024
 DEFAULT_PREVIEW_ROWS = 5
 

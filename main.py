@@ -16,7 +16,6 @@ from features import (
     RollingHurstFeature,
     EWMAVolatilityFeature,
     DropColumnsFeature,
-    
 )
 
 from labels.triple_barrier import TripleBarrierLabel
@@ -36,7 +35,6 @@ if __name__ == "__main__":
         cache_dir='./data/cache'
     )
 
-    
     pipeline = (
         FeaturePipeline()
         .register(ReturnFeature(name='return', close_column='close'))
@@ -58,26 +56,6 @@ if __name__ == "__main__":
         .register(DropColumnsFeature(['open', 'high', 'low', 'close', 'volume', 'return', 'dollar_volume', 'log_close']))
     )
 
-    splitter = BarBacktestSplitter(
-        pipeline, 
-        dollar_bars_loader, 
-        ends_at=pd.Timestamp("2026-09-30 23:59:59"),
-        in_sample_bars=3650,
-        out_of_sample_bars=900,
-        n_splits=1
-    )
-
-    train_data, embargo_data, test_data = splitter.get_last_split()
-    train_data.to_csv('data/train_data.csv', index=True)
-
-    tuner = OptunaOptimizer(
-        model_class=XGBoostQuantModel,
-        validator_class=WalkForwardCrossValidator,
-        train_data=train_data,
-        target_col='target_tb_24b',
-        n_splits=5,
-        gap=pipeline.max_lookahead()
-    )
-
-    best_params = tuner.optimize(n_trials=30)
-    tuner.evaluate_cv_folds(best_params)
+    ends_at = pd.Timestamp("2026-09-30 23:59:59")
+    train_data = dollar_bars_loader.load_backward(ends_at=ends_at, target_bars=5000)
+    train_data.to_csv("data/dollar_bars.csv")
