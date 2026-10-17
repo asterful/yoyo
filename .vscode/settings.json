@@ -1,5 +1,14 @@
 {
     "files.exclude": {
         "**/__pycache__": true
+    },
+    "emeraldwalk.runonsave": {
+        "commands": [
+            {
+                "match": "\\.py$",
+                "cmd": "python .vscode/update_init.py",
+                "isAsync": true
+            }
+        ]
     }
 }
