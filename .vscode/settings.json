@@ -10,22 +10,5 @@
                 "isAsync": true
             }
         ]
-    },
-    "filewatcher.commands": [
-        {
-            "match": "\\.py$",
-            "cmd": "python .vscode/update_init.py",
-            "event": "onFileCreate"
-        },
-        {
-            "match": "\\.py$",
-            "cmd": "python .vscode/update_init.py",
-            "event": "onFileDelete"
-        },
-        {
-            "match": "\\.py$",
-            "cmd": "python .vscode/update_init.py",
-            "event": "onFileRename"
-        }
-    ]
+    }
 }
