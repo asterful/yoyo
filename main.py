@@ -34,11 +34,11 @@ from labels.shift_triple_barrier import ShiftTribleBarrierLabel
 
 from sklearn.metrics import accuracy_score, precision_score
 
-from yoyo.loaders.backwards_dollars_loader import BackwardsDollarBarsLoader
+from yoyo.loaders.backwards_aggtrades_loader import BackwardsAggTradesDollarBarsLoader
 
 if __name__ == "__main__":
     
-    dollar_bars_loader = BackwardsDollarBarsLoader(
+    dollar_bars_loader = BackwardsAggTradesDollarBarsLoader(
         symbol='ETH/USDT', 
         exchange_id='binance', 
         dollar_threshold=5_000_000, 
