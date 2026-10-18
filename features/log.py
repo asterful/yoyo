@@ -7,8 +7,7 @@ class LogFeature(BaseFeature):
         super().__init__(name)
         self.target_column = target_column
 
-    @property
-    def warmup_bars(self) -> int:
+    def warmup_bars(self, modules: dict) -> int:
         return 0
 
     def compute(self, df: pd.DataFrame) -> pd.DataFrame:

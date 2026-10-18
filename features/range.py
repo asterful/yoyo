@@ -19,8 +19,7 @@ class RangePositionFeature(BaseFeature):
         self.window = window
         self.epsilon = epsilon
 
-    @property
-    def warmup_bars(self) -> int:
+    def warmup_bars(self, modules: dict) -> int:
         # Requires 'window' bars to calculate the rolling min/max
         return self.window
 

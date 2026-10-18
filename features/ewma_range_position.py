@@ -13,8 +13,7 @@ class EWMARangePositionFeature(BaseFeature):
         self.num_std = num_std
         self.price_col = price_col
 
-    @property
-    def warmup_bars(self) -> int:
+    def warmup_bars(self, modules: dict) -> int:
         return self.span
 
     def compute(self, df: pd.DataFrame) -> pd.DataFrame:

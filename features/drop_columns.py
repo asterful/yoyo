@@ -7,8 +7,7 @@ class DropColumnsFeature(BaseFeature):
         super().__init__("drop_raw_columns")
         self.columns_to_drop = columns_to_drop
 
-    @property
-    def warmup_bars(self) -> int:
+    def warmup_bars(self, modules: dict) -> int:
         return 0
 
     def compute(self, df: pd.DataFrame) -> pd.DataFrame:

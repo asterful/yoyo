@@ -24,8 +24,7 @@ class FFDFeature(BaseFeature):
             k += 1
         return np.array(w[::-1])
 
-    @property
-    def warmup_bars(self) -> int:
+    def warmup_bars(self, modules: dict) -> int:
         return len(self.weights) - 1
 
     def compute(self, df: pd.DataFrame) -> pd.DataFrame:

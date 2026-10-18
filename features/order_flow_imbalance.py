@@ -7,8 +7,7 @@ class OrderFlowImbalanceFeature(BaseFeature):
         super().__init__(name)
         self.window = window
 
-    @property
-    def warmup_bars(self) -> int:
+    def warmup_bars(self, modules: dict) -> int:
         return self.window
 
     def compute(self, df: pd.DataFrame) -> pd.DataFrame:

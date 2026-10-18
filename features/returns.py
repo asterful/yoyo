@@ -6,8 +6,7 @@ class ReturnFeature(BaseFeature):
         super().__init__(name)
         self.close_column = close_column
 
-    @property
-    def warmup_bars(self) -> int:
+    def warmup_bars(self, modules: dict) -> int:
         return 1
 
     def compute(self, df: pd.DataFrame) -> pd.DataFrame:

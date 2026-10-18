@@ -7,8 +7,7 @@ class VolatilityFeature(BaseFeature):
         self.window = window
         self.return_column = return_column
 
-    @property
-    def warmup_bars(self) -> int:
+    def warmup_bars(self, modules: dict) -> int:
         return self.window
 
     def compute(self, df: pd.DataFrame) -> pd.DataFrame:

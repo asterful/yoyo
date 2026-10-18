@@ -21,8 +21,7 @@ class TrendScanningTValueFeature(BaseFeature):
         self._var_beta1_factor = XtX_inv[1, 1]
         self._degrees_of_freedom = self.window - 2
 
-    @property
-    def warmup_bars(self) -> int:
+    def warmup_bars(self, modules: dict) -> int:
         return self.window
 
     def compute(self, df: pd.DataFrame) -> pd.DataFrame:
