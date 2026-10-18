@@ -27,7 +27,11 @@ class DollarBarBuilder:
         self.bar_buyer_makers = []
 
 
-    def get_dollar_bars(self, df: pd.DataFrame, threshold: float) -> pd.DataFrame:
+    def update(self, df: pd.DataFrame, threshold: float) -> pd.DataFrame:
+        """
+        Processes a single batch/chunk of data, updates the internal state,
+        and returns any completed dollar bars found in this chunk.
+        """
         prices = df[self.price].to_numpy()
         quantities = df[self.quantity].to_numpy()
         timestamps = df[self.timestamp].to_numpy()
