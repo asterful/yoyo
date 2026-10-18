@@ -8,7 +8,8 @@ class LogFeature(BaseFeature):
         self.target_column = target_column
 
     def warmup_bars(self, modules: dict) -> int:
-        return 0
+        dependency = modules.get(self.target_column)
+        return dependency.warmup_bars(modules) if dependency else 0
 
     def compute(self, df: pd.DataFrame) -> pd.DataFrame:
         if self.target_column not in df.columns:

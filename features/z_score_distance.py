@@ -13,8 +13,12 @@ class ZScoreDistanceFeature(BaseFeature):
         self.span = span
         self.price_col = price_col
 
+
     def warmup_bars(self, modules: dict) -> int:
-        return self.span
+        dep = modules.get(self.price_col)
+        dep_warmup = dep.warmup_bars(modules) if dep else 0
+        return dep_warmup + (self.span)
+
 
     def compute(self, df: pd.DataFrame) -> pd.DataFrame:
         if self.price_col not in df.columns:

@@ -25,7 +25,9 @@ class FFDFeature(BaseFeature):
         return np.array(w[::-1])
 
     def warmup_bars(self, modules: dict) -> int:
-        return len(self.weights) - 1
+        dependency = modules.get(self.source_column)
+        dependency_warmup = dependency.warmup_bars(modules) if dependency else 0
+        return dependency_warmup + len(self.weights) - 1
 
     def compute(self, df: pd.DataFrame) -> pd.DataFrame:
         if self.source_column not in df.columns:

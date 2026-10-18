@@ -10,6 +10,8 @@ class EWMAVolatilityFeature(BaseFeature):
 
 
     def warmup_bars(self, modules: dict) -> int:
+        if self.return_column in modules:
+            return modules[self.return_column].warmup_bars(modules) + self.span
         return self.span
 
 

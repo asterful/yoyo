@@ -8,7 +8,9 @@ class VolatilityFeature(BaseFeature):
         self.return_column = return_column
 
     def warmup_bars(self, modules: dict) -> int:
-        return self.window
+        dependency = modules.get(self.return_column)
+        dependency_warmup = dependency.warmup_bars(modules) if dependency else 0
+        return dependency_warmup + self.window
 
     def compute(self, df: pd.DataFrame) -> pd.DataFrame:
         if self.return_column not in df.columns:

@@ -17,7 +17,9 @@ class RollingHurstFeature(BaseFeature):
         self.price_col = price_col
 
     def warmup_bars(self, modules: dict) -> int:
-        return self.window
+        dependency = modules.get(self.price_col)
+        dependency_warmup = dependency.warmup_bars(modules) if dependency else 0
+        return dependency_warmup + self.window
 
     @staticmethod
     def _compute_hurst(series: np.ndarray) -> float:
