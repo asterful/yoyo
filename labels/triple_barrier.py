@@ -11,8 +11,7 @@ class TripleBarrierLabel(BaseFeature):
         self.volatility_col = volatility_col
 
 
-    @property
-    def lookahead_bars(self) -> int:
+    def lookahead_bars(self, modules: dict) -> int:
         """Tells the FeaturePipeline how many future bars to fetch and sync."""
         return self.horizon
 
