@@ -12,7 +12,7 @@ class PrintLabelDistribution(BaseFeature):
         self.label_col = label_col
 
 
-    def compute(self, df: pd.DataFrame) -> pd.DataFrame:
+    def compute(self, df: pd.DataFrame, start_idx: int, end_idx: int) -> pd.DataFrame:
         if self.label_col not in df.columns:
             raise KeyError(f"PrintLabelDistribution missing required column: '{self.label_col}'")
 

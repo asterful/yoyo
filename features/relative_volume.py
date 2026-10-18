@@ -11,7 +11,7 @@ class RelativeVolumeFeature(BaseFeature):
     def warmup_bars(self, modules: dict) -> int:
         return self.window
 
-    def compute(self, df: pd.DataFrame) -> pd.DataFrame:
+    def compute(self, df: pd.DataFrame, start_idx: int, end_idx: int) -> pd.DataFrame:
         if self.volume_column not in df.columns:
             raise KeyError(f"Dependency error: Feature '{self.name}' requires '{self.volume_column}' column.")
 

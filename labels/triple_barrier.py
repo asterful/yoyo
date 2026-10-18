@@ -16,7 +16,7 @@ class TripleBarrierLabel(BaseFeature):
         return self.horizon
 
 
-    def compute(self, df: pd.DataFrame) -> pd.DataFrame:
+    def compute(self, df: pd.DataFrame, start_idx, end_idx) -> pd.DataFrame:
         required_cols = ['close', 'high', 'low', self.volatility_col]
         for col in required_cols:
             if col not in df.columns:
@@ -26,9 +26,11 @@ class TripleBarrierLabel(BaseFeature):
         high = df['high'].to_numpy()
         low = df['low'].to_numpy()
         vol = df[self.volatility_col].to_numpy()
+        index_vals = df.index  # Timeframes / timestamps
         
         n = len(df)
         labels = np.full(n, np.nan)
+        t1_times = np.full(n, np.datetime64('NaT'), dtype='datetime64[ns]')
 
         # Derive pt_mult and sl_mult from scaler and ratio
         # scaler: baseline volatility multiplier for stop-loss
@@ -37,7 +39,7 @@ class TripleBarrierLabel(BaseFeature):
         pt_mult = self.scaler * self.ratio
 
         # Iterate through the timeline up to the point where the lookahead window fits
-        for i in range(n - self.horizon):
+        for i in range(start_idx, n - self.horizon):
             entry_price = close[i]
             current_vol = vol[i]
             
@@ -62,10 +64,17 @@ class TripleBarrierLabel(BaseFeature):
             # Determine which barrier was hit first
             if idx_upper < idx_lower:
                 labels[i] = 1.0   # Upper barrier hit first (Profit)
+                exit_idx = i + 1 + idx_upper
             elif idx_lower < idx_upper:
                 labels[i] = -1.0  # Lower barrier hit first (Stop Loss)
+                exit_idx = i + 1 + idx_lower
             else:
                 labels[i] = 0.0   # Time expired / Vertical barrier hit
+                exit_idx = i + self.horizon 
+
+            # Store the actual timeframe/timestamp from the DataFrame index
+            t1_times[i] = index_vals[min(exit_idx, n - 1)]
 
         df[self.name] = labels
+        df[f"{self.name}_t1"] = t1_times
         return df

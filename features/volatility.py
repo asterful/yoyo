@@ -12,7 +12,7 @@ class VolatilityFeature(BaseFeature):
         dependency_warmup = dependency.warmup_bars(modules) if dependency else 0
         return dependency_warmup + self.window
 
-    def compute(self, df: pd.DataFrame) -> pd.DataFrame:
+    def compute(self, df: pd.DataFrame, start_idx: int, end_idx: int) -> pd.DataFrame:
         if self.return_column not in df.columns:
             raise KeyError(
                 f"Dependency error: Feature '{self.name}' requires "

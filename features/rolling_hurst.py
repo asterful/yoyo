@@ -83,7 +83,7 @@ class RollingHurstFeature(BaseFeature):
         # Clip Hurst between 0 and 1 for numerical stability
         return float(np.clip(slope, 0.0, 1.0))
 
-    def compute(self, df: pd.DataFrame) -> pd.DataFrame:
+    def compute(self, df: pd.DataFrame, start_idx: int, end_idx: int) -> pd.DataFrame:
         if self.price_col not in df.columns:
             raise KeyError(f"Feature '{self.name}' requires '{self.price_col}' column.")
 

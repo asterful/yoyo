@@ -23,5 +23,6 @@ class BaseFeature(ABC):
 
 
     @abstractmethod
-    def compute(self, df: pd.DataFrame) -> pd.DataFrame:
+    def compute(self, df: pd.DataFrame, start_idx: int, end_idx: int) -> pd.DataFrame:
+        """Compute features; the requested training window is [start_idx, end_idx)."""
         pass

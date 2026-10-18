@@ -10,6 +10,6 @@ class DropColumnsFeature(BaseFeature):
     def warmup_bars(self, modules: dict) -> int:
         return 0
 
-    def compute(self, df: pd.DataFrame) -> pd.DataFrame:
+    def compute(self, df: pd.DataFrame, start_idx: int, end_idx: int) -> pd.DataFrame:
         existing_to_drop = [col for col in self.columns_to_drop if col in df.columns]
         return df.drop(columns=existing_to_drop)

@@ -21,6 +21,7 @@ from features import (
 from labels.triple_barrier import TripleBarrierLabel
 from labels.print_label_distribution import PrintLabelDistribution
 from labels.shift_triple_barrier import ShiftTribleBarrierLabel
+from labels.sample_uniqueness_weights import UniquenessWeightFeature
 
 from sklearn.metrics import accuracy_score, precision_score
 
@@ -46,12 +47,14 @@ if __name__ == "__main__":
             ratio=1.0, 
             volatility_col='ewma_vol_24b'
         ))
+        .register(UniquenessWeightFeature(name='uniqueness_weights', t1_col='target_tb_24b_t1'))
         .register(PrintLabelDistribution(label_col='target_tb_24b'))
         .register(ShiftTribleBarrierLabel(target_col='target_tb_24b'))
-        .register(DropColumnsFeature(['open', 'high', 'low', 'close', 'volume', 'return', 'dollar_volume', 'log_close']))
+        .register(DropColumnsFeature(['open', 'high', 'low', 'close', 'volume', 'return', 'log_close']))
     )
 
+
     ends_at = pd.Timestamp("2026-09-30 23:59:59")
-    train_data = pipeline.generate_backward(ends_at=ends_at, target_bars=10000, loader=dollar_bars_loader)
+    train_data = pipeline.generate_backward(ends_at=ends_at, target_bars=1, loader=dollar_bars_loader)
     print(train_data)
-    train_data.to_csv("data/train_data.csv")
+    train_data.to_csv("data/train_data.csv", index=True)

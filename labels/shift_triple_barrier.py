@@ -7,7 +7,7 @@ class ShiftTribleBarrierLabel(BaseFeature):
         self.target_col = target_col
 
 
-    def compute(self, df: pd.DataFrame) -> pd.DataFrame:
+    def compute(self, df: pd.DataFrame, start_idx: int, end_idx: int) -> pd.DataFrame:
         if self.target_col not in df.columns:
             raise KeyError(f"EncodedLabelFeature missing input column: '{self.target_col}'")
 

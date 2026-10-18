@@ -13,7 +13,7 @@ class VWAPDistanceFeature(BaseFeature):
         return 0 
 
 
-    def compute(self, df: pd.DataFrame) -> pd.DataFrame:
+    def compute(self, df: pd.DataFrame, start_idx: int, end_idx: int) -> pd.DataFrame:
         if self.price_column not in df.columns:
             raise KeyError(f"Missing price column '{self.price_column}'")
             

@@ -15,7 +15,7 @@ class EWMAVolatilityFeature(BaseFeature):
         return self.span
 
 
-    def compute(self, df: pd.DataFrame) -> pd.DataFrame:
+    def compute(self, df: pd.DataFrame, start_idx: int, end_idx: int) -> pd.DataFrame:
         # Ensure the return column exists or calculate it on the fly
         if self.return_column not in df.columns:
             if 'close' not in df.columns:

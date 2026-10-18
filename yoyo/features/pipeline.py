@@ -68,15 +68,15 @@ class FeaturePipeline:
 
         # Execute each module sequentially on the dataset
         df = raw_df.copy()
+        start_idx = warmup_bars
+        end_idx = len(df) - lookahead_bars if lookahead_bars > 0 else len(df)
+
         for module in self.modules.values():
-            df = module.compute(df)
+            df = module.compute(df, start_idx, end_idx)
             
         # Cleanly slice back:
         # 1. Drop the warmup bars at the start (oldest data used for indicator stabilization).
         # 2. Trim the tail where lookahead labels cannot be computed.
-        start_idx = warmup_bars
-        end_idx = len(df) - lookahead_bars if lookahead_bars > 0 else len(df)
-        
         final_df = df.iloc[start_idx:end_idx].copy()
         
         print(f"-> Pipeline backward complete. Final dataset shape: {final_df.shape}")
@@ -119,8 +119,10 @@ class FeaturePipeline:
 
         # Execute each module sequentially on the expanded dataset
         df = raw_df.copy()
+        start_idx, end_idx = raw_df.index.slice_locs(start_date, end_date)
+
         for module in self.modules.values():
-            df = module.compute(df)
+            df = module.compute(df, start_idx, end_idx)
             
         # Cleanly slice back to the user's requested timeframe, 
         final_df = df.loc[start_date:end_date].copy()

@@ -29,7 +29,7 @@ class FFDFeature(BaseFeature):
         dependency_warmup = dependency.warmup_bars(modules) if dependency else 0
         return dependency_warmup + len(self.weights) - 1
 
-    def compute(self, df: pd.DataFrame) -> pd.DataFrame:
+    def compute(self, df: pd.DataFrame, start_idx: int, end_idx: int) -> pd.DataFrame:
         if self.source_column not in df.columns:
             raise KeyError(
                 f"Dependency error: Feature '{self.name}' requires "

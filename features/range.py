@@ -23,7 +23,7 @@ class RangePositionFeature(BaseFeature):
         # Requires 'window' bars to calculate the rolling min/max
         return self.window
 
-    def compute(self, df: pd.DataFrame) -> pd.DataFrame:
+    def compute(self, df: pd.DataFrame, start_idx: int, end_idx: int) -> pd.DataFrame:
         missing_cols = [col for col in [self.high_column, self.low_column, self.close_column] if col not in df.columns]
         if missing_cols:
             raise KeyError(

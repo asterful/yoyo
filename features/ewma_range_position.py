@@ -18,7 +18,7 @@ class EWMARangePositionFeature(BaseFeature):
         dependency_warmup = dependency.warmup_bars(modules) if dependency else 0
         return dependency_warmup + self.span
 
-    def compute(self, df: pd.DataFrame) -> pd.DataFrame:
+    def compute(self, df: pd.DataFrame, start_idx: int, end_idx: int) -> pd.DataFrame:
         if self.price_col not in df.columns:
             raise KeyError(f"Feature '{self.name}' requires '{self.price_col}' column.")
 
