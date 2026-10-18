@@ -5,24 +5,35 @@ from yoyo.loaders.base import BackwardsLoader
 
 class FeaturePipeline:
     def __init__(self, freq: str = '1h'):
-        self.modules = []
+        self.modules: dict[str, BaseFeature] = {}
         self.freq = freq
 
 
     def register(self, feature_module: BaseFeature):
-        """Registers a feature module into the feature set."""
-        self.modules.append(feature_module)
+        """
+        Registers a feature module into the feature dictionary.
+        Note: Before Python 3.7, dicts don't retain insertion order, 
+        if you're running an older version, this needs adjustments
+        """
+        if feature_module.name in self.modules:
+            raise ValueError(f"Feature '{feature_module.name}' is already registered in this pipeline.")
+        
+        self.modules[feature_module.name] = feature_module
         return self
 
 
     def max_warmup(self) -> int:
         """Calculates the maximum warmup bars required across all registered modules."""
-        return max((m.warmup_bars for m in self.modules), default=0)
+        if not self.modules:
+            return 0
+        return max((m.warmup_bars(self.modules) for m in self.modules.values()), default=0)
 
 
     def max_lookahead(self) -> int:
         """Calculates the maximum lookahead bars required across all registered modules."""
-        return max((m.lookahead_bars for m in self.modules), default=0)
+        if not self.modules:
+            return 0
+        return max((m.lookahead_bars(self.modules) for m in self.modules.values()), default=0)
 
     
     def generate_backward(self, ends_at: pd.Timestamp, target_bars: int, loader: BaseLoader) -> pd.DataFrame:
@@ -57,7 +68,7 @@ class FeaturePipeline:
 
         # Execute each module sequentially on the dataset
         df = raw_df.copy()
-        for module in self.modules:
+        for module in self.modules.values():
             df = module.compute(df)
             
         # Cleanly slice back:
@@ -108,7 +119,7 @@ class FeaturePipeline:
 
         # Execute each module sequentially on the expanded dataset
         df = raw_df.copy()
-        for module in self.modules:
+        for module in self.modules.values():
             df = module.compute(df)
             
         # Cleanly slice back to the user's requested timeframe, 

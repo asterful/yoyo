@@ -24,16 +24,11 @@ from labels.shift_triple_barrier import ShiftTribleBarrierLabel
 
 from sklearn.metrics import accuracy_score, precision_score
 
-from yoyo.loaders.backwards_aggtrades_loader import BackwardsAggTradesDollarBarsLoader
+from yoyo.loaders import ProcessedDollarBarsLoader
 
 if __name__ == "__main__":
     
-    dollar_bars_loader = BackwardsAggTradesDollarBarsLoader(
-        symbol='ETH/USDT', 
-        exchange_id='binance', 
-        dollar_threshold=5_000_000, 
-        cache_dir='./data/cache'
-    )
+    dollar_bars_loader = ProcessedDollarBarsLoader()
 
     pipeline = (
         FeaturePipeline()
@@ -57,5 +52,6 @@ if __name__ == "__main__":
     )
 
     ends_at = pd.Timestamp("2026-09-30 23:59:59")
-    train_data = dollar_bars_loader.load_backward(ends_at=ends_at, target_bars=5000)
-    train_data.to_csv("data/dollar_bars.csv")
+    train_data = pipeline.generate_backward(ends_at=ends_at, target_bars=10000, loader=dollar_bars_loader)
+    print(train_data)
+    train_data.to_csv("data/train_data.csv")
