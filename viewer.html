@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purged K-Fold CV Timeline Viewer</title>
+    <style>
+        :root {
+            --bg-main: #090d16;
+            --bg-card: #131c2e;
+            --border-color: #1e293b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --train: #3b82f6;      /* Blue */
+            --test: #10b981;       /* Emerald Green */
+            --gap: #475569;        /* Slate Gray / Purged & Embargo */
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: var(--bg-main);
+            color: var(--text-main);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 1000px;
+        }
+
+        header {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            margin: 0 0 8px 0;
+            background: linear-gradient(135deg, #60a5fa, #34d399);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p {
+            color: var(--text-muted);
+            margin: 0;
+            font-size: 14px;
+        }
+
+        .upload-box {
+            background: var(--bg-card);
+            border: 2px dashed #334155;
+            padding: 24px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 30px;
+            transition: border-color 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .upload-box:hover {
+            border-color: #60a5fa;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .upload-input {
+            display: none;
+        }
+
+        .action-btn {
+            background: #2563eb;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+            transition: background 0.2s, transform 0.1s;
+        }
+
+        .action-btn:hover {
+            background: #1d4ed8;
+            transform: translateY(-1px);
+        }
+
+        .action-btn.secondary {
+            background: #059669;
+            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+        }
+
+        .action-btn.secondary:hover {
+            background: #047857;
+        }
+
+        #file-name {
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        /* Fold Card */
+        .fold-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+        }
+
+        .fold-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .fold-title-area {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .fold-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #f1f5f9;
+        }
+
+        .zoom-badge {
+            background: rgba(56, 189, 248, 0.1);
+            color: #38bdf8;
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-family: monospace;
+        }
+
+        .fold-controls {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .daw-btn {
+            background: #1e293b;
+            color: var(--text-main);
+            border: 1px solid #334155;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 500;
+            transition: background 0.2s, border-color 0.2s;
+        }
+
+        .daw-btn:hover {
+            background: #334155;
+            border-color: #60a5fa;
+        }
+
+        .fold-stats {
+            display: flex;
+            gap: 8px;
+            font-size: 12px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+
+        .stat-pill {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 4px 10px;
+            border-radius: 6px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            color: var(--text-muted);
+        }
+
+        .stat-pill strong {
+            color: var(--text-main);
+        }
+
+        /* Fold Minimap */
+        .fold-minimap-container {
+            margin-bottom: 12px;
+        }
+
+        .minimap-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .fold-minimap {
+            position: relative;
+            height: 22px;
+            background: #05080f;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .minimap-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Timeline Canvas */
+        .timeline-wrapper {
+            position: relative;
+        }
+
+        .timeline-viewport {
+            position: relative;
+            width: 100%;
+            height: 48px;
+            background: #05080f;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            cursor: grab;
+            user-select: none;
+        }
+
+        .timeline-viewport:active {
+            cursor: grabbing;
+        }
+
+        .timeline-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* Custom Floating Tooltip Styles */
+        #custom-tooltip {
+            position: fixed;
+            background: #1e293b;
+            color: #f8fafc;
+            border: 1px solid #475569;
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 12px;
+            line-height: 1.4;
+            pointer-events: none;
+            display: none;
+            z-index: 1000;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            white-space: pre-line;
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            margin-top: 30px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .legend-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 4px;
+        }
+
+        .placeholder {
+            text-align: center;
+            padding: 50px;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Custom Floating Tooltip Element -->
+    <div id="custom-tooltip"></div>
+
+    <div class="container">
+        <header>
+            <h1>Purged K-Fold Cross-Validation</h1>
+            <p>Interactive timeline analyzer for financial machine learning splits.</p>
+        </header>
+
+        <div class="upload-box">
+            <div class="button-group">
+                <label class="action-btn">
+                    📁 Upload `purged_cv_metadata.json`
+                    <input type="file" id="jsonFileInput" class="upload-input" accept=".json">
+                </label>
+                <button id="loadDemoBtn" class="action-btn secondary">
+                    ⚡ Load Demo Dataset
+                </button>
+            </div>
+            <div id="file-name">No file selected</div>
+        </div>
+
+        <div id="container">
+            <div class="placeholder">Upload your JSON metadata file above or click "Load Demo Dataset" to render timeline splits.</div>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="legend-color" style="background: var(--train);"></div> Training Data</div>
+            <div class="legend-item"><div class="legend-color" style="background: var(--test);"></div> Test Fold</div>
+            <div class="legend-item"><div class="legend-color" style="background: var(--gap);"></div> Purged / Embargo Gap</div>
+        </div>
+    </div>
+
+    <script>
+        const tooltip = document.getElementById('custom-tooltip');
+
+        function showTooltip(text, e) {
+            tooltip.innerText = text;
+            tooltip.style.display = 'block';
+            tooltip.style.left = `${e.clientX + 15}px`;
+            tooltip.style.top = `${e.clientY + 15}px`;
+        }
+
+        function hideTooltip() {
+            tooltip.style.display = 'none';
+        }
+
+        let globalData = null;
+        let foldStates = []; // Isolated state per fold: { zoom, scrollLeftPct, isDragging, dragStartX, dragStartScroll }
+
+        // --- Demo Data Generator ---
+        function createDemoData() {
+            const TOTAL_ROWS = 400000;
+            const folds = [];
+            const numFolds = 5;
+            const foldSize = Math.floor(TOTAL_ROWS / numFolds);
+            const purgeSize = 8000;
+            const embargoSize = 12000;
+
+            const baseDate = Date.now() - 365 * 24 * 3600 * 1000;
+            function formatDate(rowIdx) {
+                const d = new Date(baseDate + (rowIdx / TOTAL_ROWS) * (365 * 24 * 3600 * 1000));
+                return d.toISOString().replace('T', ' ').substring(0, 19);
+            }
+
+            for (let f = 1; f <= numFolds; f++) {
+                const testStart = (f - 1) * foldSize;
+                const testEnd = Math.min(TOTAL_ROWS - 1, testStart + foldSize - 1);
+
+                const purgeStart = Math.max(0, testStart - purgeSize);
+                const embargoEnd = Math.min(TOTAL_ROWS - 1, testEnd + embargoSize);
+
+                const segments = [];
+
+                // Train before test
+                if (purgeStart > 0) {
+                    segments.push({
+                        type: 'train',
+                        start_idx: 0,
+                        end_idx: purgeStart - 1,
+                        start_time: formatDate(0),
+                        end_time: formatDate(purgeStart - 1)
+                    });
+                }
+
+                // Purge Gap
+                if (testStart > purgeStart) {
+                    segments.push({
+                        type: 'gap',
+                        start_idx: purgeStart,
+                        end_idx: testStart - 1,
+                        start_time: formatDate(purgeStart),
+                        end_time: formatDate(testStart - 1)
+                    });
+                }
+
+                // Test Fold
+                segments.push({
+                    type: 'test',
+                    start_idx: testStart,
+                    end_idx: testEnd,
+                    start_time: formatDate(testStart),
+                    end_time: formatDate(testEnd)
+                });
+
+                // Embargo Gap
+                if (embargoEnd > testEnd) {
+                    segments.push({
+                        type: 'gap',
+                        start_idx: testEnd + 1,
+                        end_idx: embargoEnd,
+                        start_time: formatDate(testEnd + 1),
+                        end_time: formatDate(embargoEnd)
+                    });
+                }
+
+                // Train after test
+                if (embargoEnd < TOTAL_ROWS - 1) {
+                    segments.push({
+                        type: 'train',
+                        start_idx: embargoEnd + 1,
+                        end_idx: TOTAL_ROWS - 1,
+                        start_time: formatDate(embargoEnd + 1),
+                        end_time: formatDate(TOTAL_ROWS - 1)
+                    });
+                }
+
+                let train_rows = 0, test_rows = 0, gap_rows = 0;
+                segments.forEach(s => {
+                    const count = s.end_idx - s.start_idx + 1;
+                    if (s.type === 'train') train_rows += count;
+                    else if (s.type === 'test') test_rows += count;
+                    else gap_rows += count;
+                });
+
+                folds.push({ fold: f, train_rows, test_rows, gap_rows, segments });
+            }
+
+            return { total_rows: TOTAL_ROWS, folds };
+        }
+
+        document.getElementById('loadDemoBtn').addEventListener('click', () => {
+            globalData = createDemoData();
+            document.getElementById('file-name').innerText = 'Loaded: Simulated Financial K-Fold Dataset (400,000 Rows)';
+            initDataset();
+        });
+
+        document.getElementById('jsonFileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            document.getElementById('file-name').innerText = `Loaded: ${file.name}`;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    globalData = JSON.parse(evt.target.result);
+                    initDataset();
+                } catch (err) {
+                    alert('Error parsing JSON file!');
+                    console.error(err);
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        function initDataset() {
+            foldStates = globalData.folds.map(() => ({
+                zoom: 1.0,
+                scrollLeftPct: 0.0,
+                isDragging: false,
+                dragStartX: 0,
+                dragStartScroll: 0
+            }));
+            renderTimelineUI();
+        }
+
+        function renderTimelineUI() {
+            const container = document.getElementById('container');
+            container.innerHTML = '';
+
+            globalData.folds.forEach((fold, index) => {
+                const card = document.createElement('div');
+                card.className = 'fold-card';
+                card.dataset.foldIndex = index;
+
+                card.innerHTML = `
+                    <div class="fold-header">
+                        <div class="fold-title-area">
+                            <div class="fold-title">Fold ${fold.fold}</div>
+                            <span class="zoom-badge" id="zoom-badge-${index}">1.0x</span>
+                        </div>
+                        <div class="fold-controls">
+                            <button class="daw-btn" onclick="zoomFold(${index}, 1.5)">+</button>
+                            <button class="daw-btn" onclick="zoomFold(${index}, 0.67)">-</button>
+                            <button class="daw-btn" onclick="resetFold(${index})">Reset</button>
+                        </div>
+                    </div>
+                    <div class="fold-stats">
+                        <div class="stat-pill">Train: <strong>${fold.train_rows.toLocaleString()}</strong> rows</div>
+                        <div class="stat-pill">Test: <strong>${fold.test_rows.toLocaleString()}</strong> rows</div>
+                        <div class="stat-pill">Gaps/Purge: <strong>${fold.gap_rows.toLocaleString()}</strong> rows</div>
+                    </div>
+                    <div class="fold-minimap-container">
+                        <div class="minimap-label">
+                            <span>OVERVIEW MINIMAP</span>
+                            <span>Click or drag box to center view</span>
+                        </div>
+                        <div class="fold-minimap" id="minimap-track-${index}">
+                            <canvas class="minimap-canvas" id="minimap-canvas-${index}"></canvas>
+                        </div>
+                    </div>
+                    <div class="timeline-wrapper">
+                        <div class="timeline-viewport" id="viewport-${index}">
+                            <canvas class="timeline-canvas" id="timeline-canvas-${index}"></canvas>
+                        </div>
+                    </div>
+                `;
+
+                container.appendChild(card);
+                attachFoldEvents(index);
+                renderFoldCanvases(index);
+            });
+        }
+
+        // Setup HiDPI Canvas
+        function getScaledCanvasCtx(canvas) {
+            const rect = canvas.getBoundingClientRect();
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            const ctx = canvas.getContext('2d');
+            ctx.scale(dpr, dpr);
+            return { ctx, width: rect.width, height: rect.height };
+        }
+
+        function renderFoldCanvases(foldIndex) {
+            if (!globalData) return;
+            renderTimelineCanvas(foldIndex);
+            renderMinimapCanvas(foldIndex);
+        }
+
+        function renderTimelineCanvas(foldIndex) {
+            const canvas = document.getElementById(`timeline-canvas-${foldIndex}`);
+            if (!canvas) return;
+
+            const { ctx, width, height } = getScaledCanvasCtx(canvas);
+            const state = foldStates[foldIndex];
+            const fold = globalData.folds[foldIndex];
+            const totalRows = globalData.total_rows;
+
+            // Clamping (Max zoom increased to 10000.0x)
+            state.zoom = Math.max(1.0, Math.min(10000.0, state.zoom));
+            const visRatio = 1 / state.zoom;
+            const maxScroll = Math.max(0, 1 - visRatio);
+            state.scrollLeftPct = Math.max(0, Math.min(state.scrollLeftPct, maxScroll));
+
+            // Badge
+            const badge = document.getElementById(`zoom-badge-${foldIndex}`);
+            if (badge) badge.innerText = `${state.zoom.toFixed(1)}x`;
+
+            // Draw Background
+            ctx.fillStyle = '#05080f';
+            ctx.fillRect(0, 0, width, height);
+
+            const visStartRow = state.scrollLeftPct * totalRows;
+            const visEndRow = (state.scrollLeftPct + visRatio) * totalRows;
+            const visRowCount = visEndRow - visStartRow;
+
+            // Colors mapping
+            const colorMap = {
+                train: '#3b82f6',
+                test: '#10b981',
+                gap: '#475569'
+            };
+
+            // Draw Segments
+            fold.segments.forEach(seg => {
+                if (seg.end_idx < visStartRow || seg.start_idx > visEndRow) return;
+
+                const leftFrac = (seg.start_idx - visStartRow) / visRowCount;
+                const rightFrac = (seg.end_idx + 1 - visStartRow) / visRowCount;
+
+                const x1 = leftFrac * width;
+                const x2 = rightFrac * width;
+                const segWidth = Math.max(1, x2 - x1);
+
+                ctx.fillStyle = colorMap[seg.type] || '#475569';
+                ctx.fillRect(x1, 0, segWidth, height);
+            });
+
+            // Draw Split Boundary Markers
+            let cumulative = 0;
+            fold.segments.forEach((seg, sIdx) => {
+                const segLen = seg.end_idx - seg.start_idx + 1;
+                cumulative += segLen;
+
+                if (sIdx < fold.segments.length - 1) {
+                    if (cumulative >= visStartRow && cumulative <= visEndRow) {
+                        const markerFrac = (cumulative - visStartRow) / visRowCount;
+                        const mx = markerFrac * width;
+
+                        ctx.strokeStyle = '#38bdf8';
+                        ctx.lineWidth = 1.5;
+                        ctx.setLineDash([3, 3]);
+                        ctx.beginPath();
+                        ctx.moveTo(mx, 0);
+                        ctx.lineTo(mx, height);
+                        ctx.stroke();
+
+                        ctx.setLineDash([]);
+                        ctx.fillStyle = '#38bdf8';
+                        ctx.beginPath();
+                        ctx.arc(mx, height / 2, 4, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.strokeStyle = '#0f172a';
+                        ctx.lineWidth = 1.5;
+                        ctx.stroke();
+                    }
+                }
+            });
+        }
+
+        function renderMinimapCanvas(foldIndex) {
+            const canvas = document.getElementById(`minimap-canvas-${foldIndex}`);
+            if (!canvas) return;
+
+            const { ctx, width, height } = getScaledCanvasCtx(canvas);
+            const state = foldStates[foldIndex];
+            const fold = globalData.folds[foldIndex];
+            const totalRows = globalData.total_rows;
+
+            ctx.fillStyle = '#05080f';
+            ctx.fillRect(0, 0, width, height);
+
+            const colorMap = { train: '#3b82f6', test: '#10b981', gap: '#475569' };
+
+            // Segments
+            fold.segments.forEach(seg => {
+                const x1 = (seg.start_idx / totalRows) * width;
+                const x2 = ((seg.end_idx + 1) / totalRows) * width;
+                const segWidth = Math.max(1, x2 - x1);
+
+                ctx.fillStyle = colorMap[seg.type] || '#475569';
+                ctx.globalAlpha = 0.7;
+                ctx.fillRect(x1, 0, segWidth, height);
+                ctx.globalAlpha = 1.0;
+            });
+
+            // Viewport Box Overlay
+            const visRatio = 1 / state.zoom;
+            const boxX = state.scrollLeftPct * width;
+            const boxW = Math.max(4, visRatio * width);
+
+            ctx.fillStyle = 'rgba(56, 189, 248, 0.25)';
+            ctx.fillRect(boxX, 0, boxW, height);
+
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(boxX, 1, boxW, height - 2);
+        }
+
+        // Attach Interactive Event Handlers
+        function attachFoldEvents(foldIndex) {
+            const viewport = document.getElementById(`viewport-${foldIndex}`);
+            const minimapTrack = document.getElementById(`minimap-track-${foldIndex}`);
+
+            // 1. Precise DAW Mouse-Centering Wheel Zoom
+            viewport.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const state = foldStates[foldIndex];
+                const rect = viewport.getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseFrac = Math.max(0, Math.min(1, mouseX / rect.width));
+
+                if (e.shiftKey) {
+                    // Shift + Scroll = Horizontal Pan
+                    const panStep = (0.05 / state.zoom) * (e.deltaY > 0 ? 1 : -1);
+                    state.scrollLeftPct += panStep;
+                } else {
+                    // Zoom towards mouse pointer & bring target point into view
+                    const oldVisRatio = 1 / state.zoom;
+                    const dataFracUnderMouse = state.scrollLeftPct + (mouseFrac * oldVisRatio);
+
+                    const zoomFactor = e.deltaY < 0 ? 1.25 : 0.8;
+                    const newZoom = Math.max(1.0, Math.min(10000.0, state.zoom * zoomFactor));
+                    const newVisRatio = 1 / newZoom;
+
+                    state.zoom = newZoom;
+                    // Keep cursor position stable relative to zoomed content
+                    state.scrollLeftPct = dataFracUnderMouse - (mouseFrac * newVisRatio);
+                }
+
+                renderFoldCanvases(foldIndex);
+            }, { passive: false });
+
+            // 2. Timeline Click-and-Drag Panning
+            viewport.addEventListener('mousedown', (e) => {
+                const state = foldStates[foldIndex];
+                state.isDragging = true;
+                state.dragStartX = e.clientX;
+                state.dragStartScroll = state.scrollLeftPct;
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                const state = foldStates[foldIndex];
+                if (!state || !state.isDragging) return;
+
+                const rect = viewport.getBoundingClientRect();
+                const deltaX = e.clientX - state.dragStartX;
+                const deltaFrac = (deltaX / rect.width) * (1 / state.zoom);
+
+                state.scrollLeftPct = state.dragStartScroll - deltaFrac;
+                renderFoldCanvases(foldIndex);
+            });
+
+            window.addEventListener('mouseup', () => {
+                if (foldStates[foldIndex]) foldStates[foldIndex].isDragging = false;
+            });
+
+            // 3. Hover Tooltips on Segments
+            viewport.addEventListener('mousemove', (e) => {
+                const state = foldStates[foldIndex];
+                if (state.isDragging) {
+                    hideTooltip();
+                    return;
+                }
+
+                const rect = viewport.getBoundingClientRect();
+                const mouseFrac = (e.clientX - rect.left) / rect.width;
+
+                const totalRows = globalData.total_rows;
+                const visRatio = 1 / state.zoom;
+                const visStartRow = state.scrollLeftPct * totalRows;
+                const visEndRow = (state.scrollLeftPct + visRatio) * totalRows;
+                const hoveredRow = Math.round(visStartRow + mouseFrac * (visEndRow - visStartRow));
+
+                const fold = globalData.folds[foldIndex];
+                const seg = fold.segments.find(s => hoveredRow >= s.start_idx && hoveredRow <= s.end_idx);
+
+                if (seg) {
+                    const count = seg.end_idx - seg.start_idx + 1;
+                    const text = `[${seg.type.toUpperCase()}]\nRows: ${seg.start_idx.toLocaleString()} → ${seg.end_idx.toLocaleString()} (${count.toLocaleString()} rows)\nTime: ${seg.start_time} to ${seg.end_time}`;
+                    showTooltip(text, e);
+                } else {
+                    hideTooltip();
+                }
+            });
+
+            viewport.addEventListener('mouseleave', hideTooltip);
+
+            // 4. Minimap Interactive Navigation
+            let minimapDragging = false;
+
+            function updateMinimapScroll(e) {
+                const rect = minimapTrack.getBoundingClientRect();
+                const clickFrac = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+                const state = foldStates[foldIndex];
+                const visRatio = 1 / state.zoom;
+
+                // Center view around clicked/dragged position
+                state.scrollLeftPct = clickFrac - (visRatio / 2);
+                renderFoldCanvases(foldIndex);
+            }
+
+            minimapTrack.addEventListener('mousedown', (e) => {
+                minimapDragging = true;
+                updateMinimapScroll(e);
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (minimapDragging) {
+                    updateMinimapScroll(e);
+                }
+            });
+
+            window.addEventListener('mouseup', () => {
+                minimapDragging = false;
+            });
+        }
+
+        // Controls
+        function zoomFold(foldIndex, factor) {
+            const state = foldStates[foldIndex];
+            const visRatio = 1 / state.zoom;
+            const centerFrac = state.scrollLeftPct + visRatio / 2;
+
+            state.zoom *= factor;
+            const newVisRatio = 1 / state.zoom;
+            state.scrollLeftPct = centerFrac - newVisRatio / 2;
+
+            renderFoldCanvases(foldIndex);
+        }
+
+        function resetFold(foldIndex) {
+            const state = foldStates[foldIndex];
+            state.zoom = 1.0;
+            state.scrollLeftPct = 0.0;
+            renderFoldCanvases(foldIndex);
+        }
+
+        window.addEventListener('resize', () => {
+            if (!globalData) return;
+            foldStates.forEach((_, idx) => renderFoldCanvases(idx));
+        });
+    </script>
+</body>
+</html>

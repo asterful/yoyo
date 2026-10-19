@@ -3,6 +3,7 @@ import pandas as pd
 from yoyo.features import FeaturePipeline
 from yoyo.core import CrossValidationReport
 from yoyo.cross_validation import WalkForwardCrossValidator
+from yoyo.cross_validation import PurgedKFoldCrossValidator
 from yoyo.models import XGBoostQuantModel
 
 from features import (
@@ -67,6 +68,7 @@ if __name__ == "__main__":
             'ewma_vol_24b',
             'ewma_vol_168b',
             'target_tb_24b',
+            'target_tb_24b_t1',
             'weight',
         ]))
     )
@@ -75,12 +77,14 @@ if __name__ == "__main__":
     train_data = pipeline.generate_backward(ends_at=ends_at, target_bars=50000, loader=dollar_bars_loader)
     train_data.to_csv("data/train_data.csv")
 
-    validator = WalkForwardCrossValidator(
+    validator = PurgedKFoldCrossValidator(
         model=XGBoostQuantModel(),
         data=train_data,
-        gap=pipeline.max_warmup(),
+        t1_col="target_tb_24b_t1",
+        n_splits=5,
+        embargo=pipeline.max_warmup(),
     )
-    
+
     results = validator.run(
         target_col="target_tb_24b",
         sample_weight_col="weight",
@@ -88,5 +92,5 @@ if __name__ == "__main__":
 
     CrossValidationReport(
         results,
-        title="TRAIN PERIOD (WALK-FORWARD CV) REPORT",
+        title="TRAIN PERIOD (PURGED K-FOLD CV) REPORT",
     ).print_detailed_report()
