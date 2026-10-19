@@ -1,9 +1,7 @@
 import pandas as pd
-import numpy as np
-import optuna
 
 from yoyo.features import FeaturePipeline
-from yoyo.core import OptunaOptimizer
+from yoyo.core import CrossValidationReport
 from yoyo.cross_validation import WalkForwardCrossValidator
 from yoyo.models import XGBoostQuantModel
 
@@ -23,8 +21,6 @@ from labels.print_label_distribution import PrintLabelDistribution
 from labels.shift_triple_barrier import ShiftTribleBarrierLabel
 from labels.sample_uniqueness_weights import UniquenessWeightFeature
 from labels.class_balanced_weights import ClassBalancedWeightFeature
-
-from sklearn.metrics import accuracy_score, precision_score
 
 from yoyo.loaders import ProcessedDollarBarsLoader
 
@@ -48,7 +44,7 @@ if __name__ == "__main__":
         .register(TripleBarrierLabel(
             name='target_tb_24b',
             horizon=24,
-            scaler=3.8,
+            scaler=3.0,
             ratio=1.5,
             volatility_col='ewma_vol_24b'
         ))
@@ -76,5 +72,21 @@ if __name__ == "__main__":
     )
 
     ends_at = pd.Timestamp("2026-09-30 23:59:59")
-    train_data = pipeline.generate_backward(ends_at=ends_at, target_bars=1000, loader=dollar_bars_loader)
+    train_data = pipeline.generate_backward(ends_at=ends_at, target_bars=50000, loader=dollar_bars_loader)
     train_data.to_csv("data/train_data.csv")
+
+    validator = WalkForwardCrossValidator(
+        model=XGBoostQuantModel(),
+        data=train_data,
+        gap=pipeline.max_warmup(),
+    )
+    
+    results = validator.run(
+        target_col="target_tb_24b",
+        sample_weight_col="weight",
+    )
+
+    CrossValidationReport(
+        results,
+        title="TRAIN PERIOD (WALK-FORWARD CV) REPORT",
+    ).print_detailed_report()

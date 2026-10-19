@@ -1,7 +1,9 @@
 import optuna
 import numpy as np
 import pandas as pd
-from sklearn.metrics import classification_report, precision_recall_fscore_support
+from sklearn.metrics import precision_recall_fscore_support
+
+from .cross_validation_report import CrossValidationReport
 
 class OptunaOptimizer:
     def __init__(self, model_class, validator_class, train_data: pd.DataFrame, target_col: str = "target_tb_24b", n_splits: int = 5, gap: int = 0):
@@ -66,44 +68,6 @@ class OptunaOptimizer:
         validator = self.validator_class(model=model, data=self.train_data, n_splits=self.n_splits, gap=self.gap)
         results = validator.run(target_col=self.target_col)
         
-        # Concatenate all fold true and predicted labels together
-        all_y_true = []
-        all_y_pred = []
-        
-        for res in results:
-            all_y_true.append(res["y_true"])
-            all_y_pred.append(res["y_pred"])
-            
-        y_true_pooled = pd.concat(all_y_true)
-        y_pred_pooled = pd.concat(all_y_pred)
-        
-        self.print_detailed_report(y_true_pooled, y_pred_pooled, title="TRAIN PERIOD (WALK-FORWARD CV) REPORT")
-
-
-    @staticmethod
-    def print_detailed_report(y_true, y_pred, title="MODEL PERFORMANCE REPORT"):
-        """
-        Generates a clean, human-readable table of metrics across all classes.
-        """
-        report_dict = classification_report(y_true, y_pred, output_dict=True, zero_division=0)
-        df_report = pd.DataFrame(report_dict).transpose()
-        
-        df_report = df_report.rename(columns={
-            'precision': 'Precision',
-            'recall': 'Recall',
-            'f1-score': 'F1-Score',
-            'support': 'Support'
-        })
-        
-        print("\n" + "=" * 65)
-        print(f" {title} ")
-        print("=" * 65)
-        
-        display_df = df_report.copy()
-        for col in ['Precision', 'Recall', 'F1-Score']:
-            if col in display_df.columns:
-                display_df[col] = display_df[col].apply(lambda x: f"{x * 100:.2f}%")
-        display_df['Support'] = display_df['Support'].astype(int)
-        
-        print(display_df.to_string())
-        print("=" * 65 + "\n")
+        CrossValidationReport(
+            results, title="TRAIN PERIOD (WALK-FORWARD CV) REPORT"
+        ).print_detailed_report()
