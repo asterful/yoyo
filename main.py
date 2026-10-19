@@ -3,7 +3,6 @@ import numpy as np
 import optuna
 
 from yoyo.features import FeaturePipeline
-from yoyo.core import BarBacktestSplitter
 from yoyo.core import OptunaOptimizer
 from yoyo.cross_validation import WalkForwardCrossValidator
 from yoyo.models import XGBoostQuantModel
@@ -15,7 +14,8 @@ from features import (
     ZScoreDistanceFeature,
     RollingHurstFeature,
     EWMAVolatilityFeature,
-    DropColumnsFeature,
+    MultiplyFeature,
+    SelectColumnsFeature,
 )
 
 from labels.triple_barrier import TripleBarrierLabel
@@ -34,6 +34,8 @@ if __name__ == "__main__":
 
     pipeline = (
         FeaturePipeline()
+
+        # Feature engineering
         .register(ReturnFeature(name='return', close_column='close'))
         .register(LogFeature(name='log_close', target_column='close'))
         .register(FFDFeature(name='ffd_log_0.18', source_column='log_close', d=0.18, thresh=1e-4))
@@ -41,22 +43,38 @@ if __name__ == "__main__":
         .register(RollingHurstFeature(name='hurst_100b', window=100, price_col='log_close'))
         .register(EWMAVolatilityFeature(name='ewma_vol_24b', span=24, return_column='return'))
         .register(EWMAVolatilityFeature(name='ewma_vol_168b', span=168, return_column='return'))
+
+        # Labeling
         .register(TripleBarrierLabel(
-            name='target_tb_24b', 
+            name='target_tb_24b',
             horizon=24,
-            scaler=3.8, 
-            ratio=1.0, 
+            scaler=3.8,
+            ratio=1.5,
             volatility_col='ewma_vol_24b'
         ))
-        .register(UniquenessWeightFeature(name='sample_uniqueness_weights', t1_col='target_tb_24b_t1'))
-        .register(ClassBalancedWeightFeature(name='class_balanced_weights', label_col='target_tb_24b'))
         .register(PrintLabelDistribution(label_col='target_tb_24b'))
         .register(ShiftTribleBarrierLabel(target_col='target_tb_24b'))
-        .register(DropColumnsFeature(['open', 'high', 'low', 'close', 'volume', 'return', 'log_close']))
+
+        # Weights
+        .register(UniquenessWeightFeature(name='sample_uniqueness_weights', t1_col='target_tb_24b_t1'))
+        .register(ClassBalancedWeightFeature(name='class_balanced_weights', label_col='target_tb_24b'))
+        .register(MultiplyFeature(
+            name='weight',
+            columns=['sample_uniqueness_weights', 'class_balanced_weights'],
+        ))
+
+        # Filtering
+        .register(SelectColumnsFeature([
+            'ffd_log_0.18',
+            'zscore_ffd_24b',
+            'hurst_100b',
+            'ewma_vol_24b',
+            'ewma_vol_168b',
+            'target_tb_24b',
+            'weight',
+        ]))
     )
 
-
     ends_at = pd.Timestamp("2026-09-30 23:59:59")
-    train_data = pipeline.generate_backward(ends_at=ends_at, target_bars=3, loader=dollar_bars_loader)
-    print(train_data)
-    train_data.to_csv("data/train_data.csv", index=True)
+    train_data = pipeline.generate_backward(ends_at=ends_at, target_bars=1000, loader=dollar_bars_loader)
+    train_data.to_csv("data/train_data.csv")

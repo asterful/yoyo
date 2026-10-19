@@ -5,12 +5,14 @@ from .ewma_volatility import EWMAVolatilityFeature
 from .ffd import FFDFeature
 from .log import LogFeature
 from .momentum import TrendScanningTValueFeature
+from .multiply import MultiplyFeature
 from .order_flow_imbalance import OrderFlowImbalanceFeature
 from .range import RangePositionFeature
 from .relative_volume import RelativeVolumeFeature
 from .returns import ReturnFeature
 from .rogers_satchell import RogersSatchellFeature
 from .rolling_hurst import RollingHurstFeature
+from .select_columns import SelectColumnsFeature
 from .volatility import VolatilityFeature
 from .vwap_distance import VWAPDistanceFeature
 from .z_score_distance import ZScoreDistanceFeature
