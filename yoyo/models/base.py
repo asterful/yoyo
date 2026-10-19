@@ -7,8 +7,13 @@ import xgboost as xgb
 class BaseModel(ABC):
 
     @abstractmethod
-    def fit(self, X: pd.DataFrame, y: pd.Series) -> None:
-        """Train the model on historical data."""
+    def fit(
+        self,
+        X: pd.DataFrame,
+        y: pd.Series,
+        sample_weight: pd.Series | np.ndarray | None = None,
+    ) -> None:
+        """Train the model, optionally weighting individual samples."""
         pass
 
     @abstractmethod

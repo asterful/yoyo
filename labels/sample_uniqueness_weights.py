@@ -68,6 +68,5 @@ class UniquenessWeightFeature(BaseFeature):
         # Step 2: Compute average uniqueness weights per event
         weights = self._compute_average_uniqueness(df, num_co_events)
 
-        df[f"{self.name}_concurrency"] = num_co_events
         df[self.name] = weights
         return df

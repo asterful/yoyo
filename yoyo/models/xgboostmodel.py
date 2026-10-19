@@ -11,9 +11,14 @@ class XGBoostQuantModel(BaseModel):
         self.model = xgb.XGBClassifier(**self.params)
 
 
-    def fit(self, X: pd.DataFrame, y: pd.Series) -> None:
-        """Train the XGBoost model on historical feature data and labels."""
-        self.model.fit(X, y)
+    def fit(
+        self,
+        X: pd.DataFrame,
+        y: pd.Series,
+        sample_weight: pd.Series | np.ndarray | None = None,
+    ) -> None:
+        """Train on historical data, optionally weighting individual samples."""
+        self.model.fit(X, y, sample_weight=sample_weight)
 
 
     def predict(self, X: pd.DataFrame) -> np.ndarray:
