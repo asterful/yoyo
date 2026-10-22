@@ -5,16 +5,25 @@ from yoyo.core import CrossValidationReport
 from yoyo.cross_validation import WalkForwardCrossValidator
 from yoyo.cross_validation import PurgedKFoldCrossValidator
 from yoyo.models import XGBoostQuantModel
+from yoyo.models import HeuristicsModel 
 
 from features import (
     ReturnFeature,
     LogFeature,
     FFDFeature,
+    EWMAMeanFeature,
+    BollingerPercentBFeature,
     ZScoreDistanceFeature,
     RollingHurstFeature,
     EWMAVolatilityFeature,
+    GarmanKlassVolatilityFeature,
+    DivideFeature,
     MultiplyFeature,
     SelectColumnsFeature,
+    AverageTradeNotionalFeature,
+    DollarVelocityFeature,
+    TradeCountImbalanceFeature,
+    VolumeImbalanceRatioFeature,
 )
 
 from labels.triple_barrier import TripleBarrierLabel
@@ -32,21 +41,50 @@ if __name__ == "__main__":
     pipeline = (
         FeaturePipeline()
 
-        # Feature engineering
+        # Base
         .register(ReturnFeature(name='return', close_column='close'))
         .register(LogFeature(name='log_close', target_column='close'))
-        .register(FFDFeature(name='ffd_log_0.18', source_column='log_close', d=0.18, thresh=1e-4))
-        .register(ZScoreDistanceFeature(name='zscore_ffd_24b', span=24, price_col='ffd_log_0.18'))
-        .register(RollingHurstFeature(name='hurst_100b', window=100, price_col='log_close'))
+        .register(EWMAMeanFeature(name='ewma_mean_24b', span=24, price_col='close'))
+        .register(EWMAMeanFeature(name='ewma_mean_100b', span=100, price_col='close'))
         .register(EWMAVolatilityFeature(name='ewma_vol_24b', span=24, return_column='return'))
-        .register(EWMAVolatilityFeature(name='ewma_vol_168b', span=168, return_column='return'))
+        .register(FFDFeature(name='ffd_log_0.3', source_column='log_close', d=0.3, thresh=1e-4))
+
+        # Statistical overextension
+        .register(BollingerPercentBFeature(
+            name='bollinger_percent_b_24b',
+            mean_column='ewma_mean_24b',
+            std_span=24,
+            price_col='close',
+        ))
+        .register(BollingerPercentBFeature(
+            name='bollinger_percent_b_100b',
+            mean_column='ewma_mean_100b',
+            std_span=100,
+            price_col='close',
+        ))
+
+        # Microstructure
+        .register(VolumeImbalanceRatioFeature(name='volume_imbalance'))
+        .register(DollarVelocityFeature(name='dollar_velocity'))
+
+        # Volatility and Regime
+        .register(GarmanKlassVolatilityFeature(name='garman_klass_vol_24b', window=24))
+        .register(GarmanKlassVolatilityFeature(name='garman_klass_vol_100b', window=100))
+        .register(DivideFeature(
+            name='garman_klass_vol_ratio_24b_100b',
+            numerator_column='garman_klass_vol_24b',
+            denominator_column='garman_klass_vol_100b',
+        ))
+
+        # Bounciness
+        .register(RollingHurstFeature(name='hurst_100b', window=100, price_col='ffd_log_0.3'))
 
         # Labeling
         .register(TripleBarrierLabel(
             name='target_tb_24b',
             horizon=24,
             scaler=3.0,
-            ratio=1.5,
+            ratio=1.0,
             volatility_col='ewma_vol_24b'
         ))
         .register(PrintLabelDistribution(label_col='target_tb_24b'))
@@ -62,11 +100,22 @@ if __name__ == "__main__":
 
         # Filtering
         .register(SelectColumnsFeature([
-            'ffd_log_0.18',
-            'zscore_ffd_24b',
+            # Base
+            'ffd_log_0.3',
+            'ewma_mean_24b',
+            'ewma_mean_100b',
+            # Over extensin
+            'bollinger_percent_b_24b',
+            'bollinger_percent_b_100b',
+            # Micro structure
+            'volume_imbalance',
+            'dollar_velocity',
+            # Volatility and regime
+            'garman_klass_vol_24b',
+            'garman_klass_vol_ratio_24b_100b',
+            # Bounciness
             'hurst_100b',
-            'ewma_vol_24b',
-            'ewma_vol_168b',
+            # Targets / Weights
             'target_tb_24b',
             'target_tb_24b_t1',
             'weight',
@@ -78,7 +127,7 @@ if __name__ == "__main__":
     train_data.to_csv("data/train_data.csv")
 
     validator = PurgedKFoldCrossValidator(
-        model=XGBoostQuantModel(),
+        model=HeuristicsModel(lower_thresh=0.3, upper_thresh=0.7),
         data=train_data,
         t1_col="target_tb_24b_t1",
         n_splits=5,

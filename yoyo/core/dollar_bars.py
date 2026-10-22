@@ -1,3 +1,5 @@
+from typing import Union
+
 import pandas as pd
 import numpy as np
 
@@ -27,10 +29,13 @@ class DollarBarBuilder:
         self.bar_buyer_makers = []
 
 
-    def update(self, df: pd.DataFrame, threshold: float) -> pd.DataFrame:
+    def update(self, df: pd.DataFrame, threshold: Union[float, pd.Series]) -> pd.DataFrame:
         """
         Processes a single batch/chunk of data, updates the internal state,
         and returns any completed dollar bars found in this chunk.
+
+        Treshold can be static or dynamic, it must be a series with the desired treshold for every single timestamp,
+        bars will try to use the closest treshold found in the timestamp 
         """
         prices = df[self.price].to_numpy()
         quantities = df[self.quantity].to_numpy()
@@ -38,10 +43,17 @@ class DollarBarBuilder:
         first_ids = df[self.first_trade_id].to_numpy()
         last_ids = df[self.last_trade_id].to_numpy()
         buyer_makers = df[self.is_buyer_maker].to_numpy()
+
+        if isinstance(threshold, pd.Series):
+            if not threshold.index.is_monotonic_increasing:
+                threshold = threshold.sort_index()
+            batch_thresholds = threshold.asof(pd.to_datetime(timestamps)).to_numpy()
+        else:
+            batch_thresholds = np.full(len(df), threshold, dtype=float)
         
         bars = []
         
-        for p, q, t, f_id, l_id, b_maker in zip(prices, quantities, timestamps, first_ids, last_ids, buyer_makers):
+        for p, q, t, f_id, l_id, b_maker, current_threshold in zip(prices, quantities, timestamps, first_ids, last_ids, buyer_makers, batch_thresholds):
             dollar_val = p * q
             self.bar_dollar_value += dollar_val
             self.bar_prices.append(p)
@@ -51,7 +63,7 @@ class DollarBarBuilder:
             self.bar_last_ids.append(l_id)
             self.bar_buyer_makers.append(b_maker)
             
-            if self.bar_dollar_value >= threshold:
+            if self.bar_dollar_value >= current_threshold:
                 q_arr = np.array(self.bar_quantities)
                 bm_arr = np.array(self.bar_buyer_makers)
                 f_arr = np.array(self.bar_first_ids)
