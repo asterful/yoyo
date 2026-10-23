@@ -79,12 +79,11 @@ class DynamicDollarBarBuilder:
         }
 
 
-    def _get_trade_day(self, t):
-        """Safely extracts the calendar date from integer timestamps or datetime objects."""
-        if isinstance(t, (int, np.integer, float)):
-            unit = 'ms' if t > 1e10 else 's'
-            return pd.to_datetime(t, unit=unit).date()
-        return pd.to_datetime(t).date()
+    def _get_batch_trade_days(self, timestamps: np.ndarray) -> np.ndarray:
+        """Vectorized conversion of an entire numpy array of timestamps to dates."""
+        unit = 'ms' if timestamps[0] > 1e10 else 's'
+        # Convert entire array at once using pandas vectorized datetime conversion
+        return pd.to_datetime(timestamps, unit=unit).date
     
 
     def _update_daily_threshold(self):
@@ -123,13 +122,14 @@ class DynamicDollarBarBuilder:
         first_ids = df[self.first_trade_id].to_numpy()
         last_ids = df[self.last_trade_id].to_numpy()
         buyer_makers = df[self.is_buyer_maker].to_numpy()
+
+        trade_days = self._get_batch_trade_days(timestamps)
         
         bars = []
         
-        for p, q, t, f_id, l_id, b_maker in zip(prices, quantities, timestamps, first_ids, last_ids, buyer_makers):
+        for p, q, t, trade_day, f_id, l_id, b_maker in zip(prices, quantities, timestamps, trade_days, first_ids, last_ids, buyer_makers):
             dollar_val = p * q
 
-            trade_day = self._get_trade_day(t)
             self._handle_day_transition(trade_day, dollar_val)
             
             self.bar_dollar_value += dollar_val

@@ -123,11 +123,11 @@ if __name__ == "__main__":
     )
 
     ends_at = pd.Timestamp("2026-09-30 23:59:59")
-    train_data = pipeline.generate_backward(ends_at=ends_at, target_bars=50000, loader=dollar_bars_loader)
+    train_data = pipeline.generate_backward(ends_at=ends_at, target_bars=40000, loader=dollar_bars_loader)
     train_data.to_csv("data/train_data.csv")
 
     validator = PurgedKFoldCrossValidator(
-        model=HeuristicsModel(lower_thresh=0.3, upper_thresh=0.7),
+        model=XGBoostQuantModel(),
         data=train_data,
         t1_col="target_tb_24b_t1",
         n_splits=5,

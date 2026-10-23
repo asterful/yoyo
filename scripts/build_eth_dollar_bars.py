@@ -11,11 +11,14 @@ from tqdm import tqdm
 ROOT_DIR = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT_DIR))
 from yoyo.core.dollar_bars import DollarBarBuilder
+from yoyo.core.dynamic_dollar_bars import DynamicDollarBarBuilder
 
 INPUT_DIR = ROOT_DIR / "data" / "processed_aggTrades"
-OUTPUT_PATH = ROOT_DIR / "data" / "processed_dollarBars" / "ETHUSDT-dollarBars-2020-01_2026-09.parquet"
-THRESHOLD = 100_000_000
-BATCH_SIZE = 250_000
+OUTPUT_PATH = ROOT_DIR / "data" / "processed_dollarBars" / "ETHUSDT-dyn-dollarBars-2020-01_2026-09.parquet"
+INITIAL_THRESHOLD = 100_000_000
+TARGET_BARS_PER_DAY = 20.0
+SPAN = 30.0
+BATCH_SIZE = 1_000_000
 COLUMNS = [
     "price",
     "quantity",
@@ -33,13 +36,16 @@ def main() -> None:
     ]
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
 
-    builder = DollarBarBuilder(
+    builder = DynamicDollarBarBuilder(
         price="price",
         quantity="quantity",
         first_trade_id="first_trade_id",
         last_trade_id="last_trade_id",
         timestamp="transact_time",
         is_buyer_maker="is_buyer_maker",
+        initial_threshold=INITIAL_THRESHOLD,
+        target_bars_per_day=TARGET_BARS_PER_DAY,
+        span=SPAN,
     )
     writer = None
     trades_processed = 0
@@ -61,7 +67,7 @@ def main() -> None:
                         columns=COLUMNS,
                     ):
                         trades = batch.to_pandas()
-                        bars = builder.update(trades, THRESHOLD)
+                        bars = builder.update(trades)
                         if not bars.empty:
                             table = pa.Table.from_pandas(bars, preserve_index=False)
                             if writer is None:

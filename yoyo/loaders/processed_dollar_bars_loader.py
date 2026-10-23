@@ -14,7 +14,7 @@ class ProcessedDollarBarsLoader(BackwardsLoader):
                 Path(__file__).resolve().parents[2]
                 / "data"
                 / "processed_dollarBars"
-                / "ETHUSDT-dollarBars-2020-01_2026-09.parquet"
+                / "ETHUSDT-dyn-dollarBars-2020-01_2026-09.parquet"
             )
         self.file_path = Path(file_path)
         self._data: pd.DataFrame | None = None
